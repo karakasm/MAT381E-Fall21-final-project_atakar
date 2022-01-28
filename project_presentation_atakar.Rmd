@@ -1,0 +1,1273 @@
+---
+title: "Some Remarkable Education Statistics in Turkey"
+author: "Atakar"
+output: slidy_presentation
+  
+---
+
+
+### Team Members 
+1. Semih Atalay - 090180314   
+2. Mahmud Turab Karakaş - 090180306
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(readxl)
+library(rvest)
+library(sf)
+library(leaflet)
+library(ggplot2)
+library(gganimate)
+library(gridExtra)
+library(tmaptools)
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+mytheme <- theme_set(theme_minimal()) 
+mytheme <- theme_update(panel.grid = element_line(linetype = "solid", size = 0.4),
+                        panel.grid.major.x = element_blank(), 
+                        panel.grid.minor= element_blank(), 
+                        plot.title = element_text(face="bold"), 
+                        plot.caption = element_text(hjust = 0))
+```
+
+
+### Project Goal 
+Education helps new generations acquire the necessary knowledge, skills and understanding and develop their personalities in order to take their place in social life.In addition, the greatest wealth for a nation is not its underground or above-ground wealth, but the main great wealth is the generations of quality individuals that it has raised thanks to the education of that country. Educational processes of individuals in Turkey end up in different education levels due to various reasons such as the geographical locations of individuals, the insensitivity of parents or students to education, family problems, economic inadequacies, lack of working environment for students at home, physical inadequacy of schools. Differences in completed education levels are reflected to individuals as the gap between income levels in their future business life. Therefore, the aim of this project is to share and evaluate some remarkable education statistics in Turkey.
+
+
+
+### Introduction of First Education Statistic
+The first aim of the project is to see whether the level of education completed contributes to people's income, and to observe whether the gender difference creates a privilege in the income earned for the same education levels. For this purpose, data showing annual average gross earnings by gender and completed education level for the years 2006, 2010, 2014 and 2018 were used.  
+
+
+```{r, warning=FALSE, message=FALSE}
+data1 = read_excel("data/average_annual_gross_earnings_by_education_level.xls", range = "A8:F27")
+
+data1 = data1[,-1]
+
+colnames(data1)[c(1:5)] = paste(c("com_edu_lev",
+                                  "2006",
+                                  "2010",
+                                  "2014",
+                                  "2018"))
+data1 = drop_na(data1)
+
+i = 1
+while (i <= 15 ) {
+data1[c(i),1]   = "Primary school and below"
+data1[c(i+1),1] = "Primary education and secondary school"
+data1[c(i+2),1] = "High school"
+data1[c(i+3),1] = "Vocational high school"
+data1[c(i+4),1] = "Higher education"
+i = i+5;
+}
+
+data1 = data1 %>%
+  mutate(type = case_when(rownames(data1) %in% c(1:5) ~ "total",
+                            rownames(data1) %in% c(6:10) ~ "male",
+                            TRUE ~ "female"))
+
+data1 = pivot_longer(data1, "2006":"2018", names_to = "Year")
+```
+
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE, fig.align='center'}
+knitr::kable(head(data1))
+```
+
+
+
+
+```{r, warning=FALSE, message=FALSE, fig.align='center'}
+data1 %>%
+  filter(type == "total") %>%
+  ggplot(aes(x=com_edu_lev, y=value, fill = Year)) +
+  geom_bar(stat = "identity", position ="dodge") +
+  scale_fill_manual(values=c("2006"= "#f20707","2010"="#ba0606","2014"="#800303","2018"="#5e0202")) +  
+  labs(x="", y="",
+       title = "What Is The Average Annual Gross Earnings by Completed Education Level?",
+       subtitle = "Total") + 
+  scale_y_continuous(expand=c(0,0),limits = c(0,78000), n.breaks = 20 )  +
+   scale_x_discrete(
+            breaks = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education"),
+            label = c("Primary",
+                      "Secondary",
+                      "High School",
+                      "Vocational High",
+                      "Higher Education"),
+            limits = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education")) +
+  theme(axis.text.x= element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title=element_text(color="black",size=9))
+```
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data1 %>%
+  filter(type == "male") %>%
+  ggplot(aes(x=com_edu_lev, y=value, fill = Year)) +
+  geom_bar(stat = "identity", position ="dodge") +
+   scale_fill_manual(values=c("2006"="#3db6f2","2010"="#3498c9","2014"="#2a7ba3","2018"="#1e5975")) +
+  labs(x="", y="",
+       title = "What Is The Average Annual Gross Earnings by Completed Education Level?",
+       subtitle = "Male") +
+  scale_y_continuous(expand=c(0,0),limits = c(0,83000), n.breaks = 20 )  +
+  scale_x_discrete(
+            breaks = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education"),
+            label = c("Primary",
+                      "Secondary",
+                      "High School",
+                      "Vocational High",
+                      "Higher Education"),
+            limits = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education")) +
+  theme(axis.text.x= element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title=element_text(color="black",size=9))
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data1 %>%
+  filter(type == "female") %>%
+  ggplot(aes(x=com_edu_lev, y=value, fill = Year)) +
+  geom_bar(stat = "identity", position ="dodge") +
+   scale_fill_manual(values=c("2006"="#e0b0ff","2010"="#c779fc","2014"="#9744cf","2018" = "#6815a1")) +
+  labs(x="", y="",
+       title = "What Is The Average Annual Gross Earnings by Completed Education Level?",
+       subtitle = "Female") +
+  scale_y_continuous(expand=c(0,0),limits = c(0,68000), n.breaks = 20 )  +
+  scale_x_discrete(
+            breaks = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education"),
+            label = c("Primary",
+                      "Secondary",
+                      "High School",
+                      "Vocational High",
+                      "Higher Education"),
+            limits = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education")) +
+  theme(axis.text.x= element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title=element_text(color="black",size=9))
+```
+
+
+As can be seen from these three graphs, the annual average earnings of those who have completed primary, secondary and high school are almost the same, regardless of year and gender. It is seen that the earnings of the people who have completed the vocational high school are higher than the high school. As expected, the people with the highest earnings are college graduates.  
+
+
+
+```{r, warning=FALSE, message=FALSE, fig.align='center'}
+data1 %>%
+  filter(Year == 2006 & ( type == "female" | type == "male" )) %>%
+  ggplot(aes(x=com_edu_lev, y=value, fill = type)) +
+    geom_bar(stat="identity", position = "dodge") +
+    scale_fill_manual(values=c("male"="#3197ad", "female"="#a80d7a")) +
+  labs(x="", y="",
+       title = "Comparison of Average Annual Gross Earnings of Men and Women \nby Completed Education Level",
+       subtitle = "Year: 2006") +
+  scale_y_continuous(expand=c(0,0),limits = c(0,33000), n.breaks = 20 )  +
+  scale_x_discrete(
+            breaks = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education"),
+            label = c("Primary",
+                      "Secondary",
+                      "High",
+                      "Vocational",
+                      "Higher"),
+            limits = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education")) +
+  theme(axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title=element_blank())
+```
+
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data1 %>%
+  filter(Year == 2010 & ( type == "female" | type == "male" )) %>%
+  ggplot(aes(x=com_edu_lev, y=value, fill = type)) +
+   geom_bar(stat="identity", position = "dodge") +
+    scale_fill_manual(values=c("male"="#3197ad", "female"="#a80d7a")) +
+  labs(x="", y="",
+       title = "Comparison of Average Annual Gross Earnings of Men and Women \nby Completed Education Level",
+       subtitle = "Year: 2010") +
+  scale_y_continuous(expand=c(0,0),limits = c(0,41000), n.breaks = 20 )  +
+  scale_x_discrete(
+            breaks = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education"),
+             label = c("Primary",
+                      "Secondary",
+                      "High",
+                      "Vocational",
+                      "Higher"),
+            limits = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education")) +
+  theme(axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title=element_blank())
+
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data1 %>%
+  filter(Year == 2014 & ( type == "female" | type == "male" )) %>%
+  ggplot(aes(x=com_edu_lev, y=value, fill = type)) +
+   geom_bar(stat="identity", position = "dodge") +
+    scale_fill_manual(values=c("male"="#3197ad", "female"="#a80d7a")) +
+  labs(x="", y="",
+       title = "Comparison of Average Annual Gross Earnings of Men and Women \nby Completed Education Level",
+       subtitle = "Year: 2014") +
+  scale_y_continuous(expand=c(0,0),limits = c(0,59000), n.breaks = 20 )  +
+  scale_x_discrete(
+            breaks = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education"),
+            label = c("Primary",
+                      "Secondary",
+                      "High",
+                      "Vocational",
+                      "Higher"),
+            limits = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education")) +
+  theme(axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title=element_blank())
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data1 %>%
+  filter(Year == 2018 & ( type == "female" | type == "male" )) %>%
+  ggplot(aes(x=com_edu_lev, y=value, fill = type)) +
+   geom_bar(stat="identity", position = "dodge") +
+    scale_fill_manual(values=c("male"="#3197ad", "female"="#a80d7a")) +
+  labs(x="", y="",
+       title = "Comparison of Average Annual Gross Earnings of Men and Women \nby Completed Education Level",
+       subtitle = "Year: 2018") +
+  scale_y_continuous(expand=c(0,0),limits = c(0,83000), n.breaks = 20 )  +
+  scale_x_discrete(
+            breaks = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education"),
+            label = c("Primary",
+                      "Secondary",
+                      "High",
+                      "Vocational",
+                      "Higher"),
+            limits = c("Primary school and below",
+                       "Primary education and secondary school",
+                       "High school",
+                       "Vocational high school",
+                       "Higher education")) +
+  theme(axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title=element_blank())
+```
+
+
+When compare the annual average earnings as men and women, it would not be wrong to say that men with the same education level earn a little more than women with the same education level, regardless of the year.  
+
+
+### Introduction of Second Education Statistic
+The second aim of the project is to reveal the reasons why individuals who have completed an education level but have not completed their education until university cannot complete the education process and show how these reasons change due to gender difference. For this reason, data prepared by considering individuals between the ages of 15-34 in the second quarter of 2016 and showing the reasons why individuals did not complete their education until university were used.
+
+```{r, warning=FALSE, message=FALSE}
+data2 = read_excel("data/reasons_for_not_completing_university.xls", range = "A6:K23")
+
+data2 = data2 %>%
+          setNames(c("completed_education_level",
+                     "Total",
+                     "his/her education is enough",
+                     "failed exam",
+                     "not interested in school",
+                     "to cost of studying to high",
+                     "want to work",
+                     "family or spouse not allow schooling",
+                     "marriage or other family reason",
+                     "disability and health reason",
+                     "other")) %>%
+          select(-2)
+
+
+data2$`family or spouse not allow schooling`  = as.numeric(data2$`family or spouse not allow schooling`)
+
+data2 = data2[c(-6,-12),]
+
+
+data2 = data2 %>%
+  mutate(type = case_when(rownames(data2) %in% c(1:5) ~ "total",
+                            rownames(data2) %in% c(6:10) ~ "male",
+                            TRUE ~ "female"))
+
+
+
+i = 1
+while (i <= 15 ) {
+data2[c(i),1]   = "Primary school"
+data2[c(i+1),1] = "Junior high school"
+data2[c(i+2),1] = "High school"
+data2[c(i+3),1] = "Vocational high school"
+data2[c(i+4),1] = "Higher education"
+i = i+5;
+}
+
+
+data2 = pivot_longer(data2,  "his/her education is enough":"other", names_to = "reason")
+
+
+```
+
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE, fig.align='center'}
+knitr::kable(head(data2))
+```
+
+
+
+```{r, warning=FALSE, message=FALSE, fig.align='center'}
+pie_col = get_brewer_pal("Spectral", n = 9)
+```
+
+```{r, warning=FALSE, message=FALSE, fig.align='center'}
+data2 %>% 
+  filter(type == "total") %>%
+  group_by(reason) %>%
+  summarise(total_value=sum(value)) %>%
+  ggplot(aes(x="", y=total_value, fill=reason)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  scale_fill_manual(values=c(pie_col)) +
+  geom_text(aes(label = paste0(round(((total_value*100)/sum(total_value))), "%")), position = position_stack(vjust = 0.5))+
+  labs(x = NULL, y = NULL, fill = NULL, title = "What Are The Reasons People \nDo Not Go To University?") +
+  theme_classic() + 
+  theme(axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        plot.title = element_text(hjust = 0.5, color = "#666666"))
+
+```
+
+
+```{r, warning=FALSE, message=FALSE, fig.align='center'}
+data2 %>%
+  filter(completed_education_level == "Primary school" & type == "total") %>%
+  ggplot(aes(x=value, y=reorder(reason, +value), fill = reason)) +
+  geom_bar(stat="identity", position = "dodge") +
+  scale_fill_manual(values=c(pie_col)) +
+  labs(x="", y="",title = "What Is The Reason For Not Attending Education\nAfter Primary School",
+       subtitle = "Total & 15-34 Age group & 2016 & Thousand person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,530), n.breaks = 10 )  +
+  scale_y_discrete(
+            breaks = c("completed_education_level",
+                     "Total",
+                     "his/her education is enough",
+                     "failed exam",
+                     "not interested in school",
+                     "to cost of studying to high",
+                     "want to work",
+                     "family or spouse not allow schooling",
+                     "marriage or other family reason",
+                     "disability and health reason",
+                     "other")) + 
+  theme_classic() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10, face = "bold"),
+        plot.subtitle = element_text(color="black",size=10))
+  
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data2 %>%
+  filter(completed_education_level == "Junior high school" & type == "total") %>%
+  ggplot(aes(x=value, y=reorder(reason, +value), fill = reason)) +
+  geom_bar(stat="identity", position = "dodge") +
+  scale_fill_manual(values=c(pie_col)) +
+  labs(x="", y="",title = "What Is The Reason For Not Attending Education\nAfter Junior High School",
+       subtitle = "Total & 15-34 Age group & 2016 & Thousand person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,730), n.breaks = 20 )  +
+  scale_y_discrete(
+            breaks = c("completed_education_level",
+                     "Total",
+                     "his/her education is enough",
+                     "failed exam",
+                     "not interested in school",
+                     "to cost of studying to high",
+                     "want to work",
+                     "family or spouse not allow schooling",
+                     "marriage or other family reason",
+                     "disability and health reason",
+                     "other")) + 
+  theme_classic() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10, face = "bold"),
+        plot.subtitle = element_text(color="black",size=10))
+```
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data2 %>%
+  filter(completed_education_level == "High school" & type == "total") %>%
+  ggplot(aes(x=value, y=reorder(reason, +value), fill = reason)) +
+  geom_bar(stat="identity", position = "dodge") +
+  scale_fill_manual(values=c(pie_col)) +
+  labs(x="", y="",title = "What Is The Reason For Not Attending Education\nAfter High School",
+       subtitle = "Total & 15-34 Age group & 2016 & Thousand person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,530), n.breaks = 10 )  +
+  scale_y_discrete(
+            breaks = c("completed_education_level",
+                     "Total",
+                     "his/her education is enough",
+                     "failed exam",
+                     "not interested in school",
+                     "to cost of studying to high",
+                     "want to work",
+                     "family or spouse not allow schooling",
+                     "marriage or other family reason",
+                     "disability and health reason",
+                     "other")) + 
+  theme_classic() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10, face = "bold"),
+        plot.subtitle = element_text(color="black",size=10))
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data2 %>%
+  filter(completed_education_level == "Vocational high school" & type == "total") %>%
+  ggplot(aes(x=value, y=reorder(reason, +value), fill = reason)) +
+  geom_bar(stat="identity", position = "dodge") +
+  scale_fill_manual(values=c(pie_col)) +
+  labs(x="", y="",title = "What Is The Reason For Not Attending Education\nAfter Vocational High School",
+       subtitle = "Total & 15-34 Age group & 2016 & Thousand person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,380), n.breaks = 10 )  +
+  scale_y_discrete(
+            breaks = c("completed_education_level",
+                     "Total",
+                     "his/her education is enough",
+                     "failed exam",
+                     "not interested in school",
+                     "to cost of studying to high",
+                     "want to work",
+                     "family or spouse not allow schooling",
+                     "marriage or other family reason",
+                     "disability and health reason",
+                     "other")) + 
+  theme_classic() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10, face = "bold"),
+        plot.subtitle = element_text(color="black",size=10))
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data2 %>%
+  filter(completed_education_level == "Higher education" & type == "total") %>%
+  ggplot(aes(x=value, y=reorder(reason, +value), fill = reason)) +
+  geom_bar(stat="identity", position = "dodge") +
+  scale_fill_manual(values=c(pie_col)) +
+  labs(x="", y="",title = "What Is The Reason For Not Attending Education\nAfter Higher Education",
+       subtitle = "Total & 15-34 Age group & 2016 & Thousand person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,380), n.breaks = 12 )  +
+  scale_y_discrete(
+            breaks = c("completed_education_level",
+                     "Total",
+                     "his/her education is enough",
+                     "failed exam",
+                     "not interested in school",
+                     "to cost of studying to high",
+                     "want to work",
+                     "family or spouse not allow schooling",
+                     "marriage or other family reason",
+                     "disability and health reason",
+                     "other")) + 
+  theme_classic() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10, face = "bold"),
+        plot.subtitle = element_text(color="black",size=10))
+```
+
+While the high cost of education at low education levels plays a major role in not continuing education, it is seen that this reason loses its importance and decreases as the education level rises. In addition, failing the exams stands out as the most important reason for not continuing education at high school and vocational high school level.
+
+
+```{r, warning=FALSE, message=FALSE, fig.align='center'}
+data2 %>%
+  filter((type == "male" | type == "female") & completed_education_level == "Primary school")  %>%
+  ggplot(aes(x=value, y=reorder(reason, +value), fill = type)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_manual(values=c("male"="#355F3B", "female"="#FED700")) +
+  labs(x="", y="",title = "Comparison of Not Attending Reasons To University \nBetween Man and Women After Primary School",
+       subtitle = "15-34 Age group & 2016 & Thousand person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,430), n.breaks = 10 )  +
+  theme_classic() +
+  theme(axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10, face = "bold"),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title = element_blank())
+```
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data2 %>%
+  filter((type == "male" | type == "female") & completed_education_level == "Junior high school")  %>%
+  ggplot(aes(x=value, y=reorder(reason, +value), fill = type)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_manual(values=c("male"="#355F3B", "female"="#FED700")) +
+  labs(x="", y="",title = "Comparison of Not Attending Reasons To University \nBetween Man and Women After Junior High School",
+       subtitle = "15-34 Age group & 2016 & Thousand person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,430), n.breaks = 10 )  +
+  theme_classic() +
+  theme(axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10, face = "bold"),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title = element_blank())
+```
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data2 %>%
+  filter((type == "male" | type == "female") & completed_education_level == "High school")  %>%
+  ggplot(aes(x=value, y=reorder(reason, +value), fill = type)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_manual(values=c("male"="#355F3B", "female"="#FED700")) +
+  labs(x="", y="",title = "Comparison of Not Attending Reasons To University \nBetween Man and Women After High School",
+       subtitle = "15-34 Age group & 2016 & Thousand person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,300), n.breaks = 10 )  +
+  theme_classic() +
+  theme(axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10, face = "bold"),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title = element_blank())
+```
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data2 %>%
+  filter((type == "male" | type == "female") & completed_education_level == "Vocational high school")  %>%
+  ggplot(aes(x=value, y=reorder(reason, +value), fill = type)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_manual(values=c("male"="#355F3B", "female"="#FED700")) +
+  labs(x="", y="",title = "Comparison of Not Attending Reasons To University \nBetween Man and Women After Vocational High School",
+       subtitle = "15-34 Age group & 2016 & Thousand person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,230), n.breaks = 10 )  +
+  theme_classic() +
+  theme(axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10, face = "bold"),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title = element_blank())
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center'}
+data2 %>%
+  filter((type == "male" | type == "female") & completed_education_level == "Higher education")  %>%
+  ggplot(aes(x=value, y=reorder(reason, +value), fill = type)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_manual(values=c("male"="#355F3B", "female"="#FED700")) +
+  labs(x="", y="",title = "Comparison of Not Attending Reasons To University \nBetween Man and Women After Higher Education",
+       subtitle = "15-34 Age group & 2016 & Thousand person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,230), n.breaks = 10 )  +
+  theme_classic() +
+  theme(axis.text.x = element_text(size=8,color="black"),
+        axis.text.y =element_text(size=8,color="black"),
+        plot.title=element_text(color="black",size=10, face = "bold"),
+        plot.subtitle = element_text(color="black",size=10),
+        legend.title = element_blank())
+```
+
+While the number of women who did not complete the education process due to marriage and family problems in the early stages of education is quite high compared to men, the number of men who do not continue their education process due to their desire to work is also higher than women. Forced marriage of women at an early age due to family pressure and the desire of men to enter business life at an early age to help their families financially may be one of the factors in this situation.  
+
+
+
+
+
+
+
+### Introduction of Third Education Statistic
+Another aim of the project is to show how the education expenditures for various education levels and the amount of expenditure per student at each education level have changed over the years. Therefore, data containing information on education expenditure per student by education level between 2011 and 2020 were used.
+
+
+
+```{r, warning=FALSE, message=FALSE}
+data3 = read_excel("data/education_expenditure_per_student_by_education_level.xls", range = "A15:E69")
+
+
+i = 1
+while(i<=10){
+ data3[i,1] = "pre-primary"
+ data3[i+11,1] = "primary"
+ data3[i+22,1] = "lower secondary"
+ data3[i+33,1] = "upper secondary"
+ data3[i+44,1] = "tertiary"
+ i = i + 1
+}
+
+data3 = drop_na(data3);
+
+data3 = data3 %>%
+          setNames(c("education_level",
+                     "year",
+                     "expenditure",
+                     "exp per student (TL)",
+                     "exp per student ($)"))
+
+```
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE, fig.align='center'}
+knitr::kable(head(data3))
+```
+
+
+```{r, warning=FALSE, message=FALSE, fig.align='center', fig.width=5, fig.height=4}
+data3 %>%
+  ggplot(aes(x = expenditure/1000, y=education_level)) +
+  geom_segment( aes(x=0, xend=expenditure/1000, y=education_level, yend=education_level), color="chartreuse4") +
+  geom_point( color="chartreuse2", size=3, alpha=0.6) +
+  scale_x_continuous(expand=c(0,0),limits = c(0,95),n.breaks = 10 )  +
+  transition_time(year) +
+  labs(x = "Expenditure", y = "",
+       title ="How Do Expenditures on Education Levels Change \nBetween 2011-2020?",
+       subtitle = "Year: {as.integer(frame_time)} & Billion TL") +
+  theme_light() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.y =element_text(size=6,color="black"),
+    axis.title.y=element_blank(),
+    axis.text.x = element_text(size=6,color="black"),
+    axis.title.x=element_text(size=6, hjust = 1),
+    plot.title=element_text(color="black",size=6, face = "bold"),
+    plot.subtitle = element_text(color="black",size=6)) 
+```
+
+
+```{r, warning=FALSE, message=FALSE, fig.align='center', fig.width=5, fig.height=4}
+data3 %>%
+   ggplot(aes(x = `exp per student (TL)`/1000, y=education_level)) +
+  geom_segment( aes(x=0, xend=`exp per student (TL)`/1000, y=education_level, yend=education_level), color="#ab0505") +
+  geom_point( color="#ab0505", size=3, alpha=0.6) +
+  scale_x_continuous(expand=c(0,0),limits = c(0,23), n.breaks = 11 )  +
+  labs(x = "Expenditure per Student", y = "",
+       title ="How Do Expenditures per Student on Education Levels \nChange Between 2011-2020?",
+       subtitle = "Year: {as.integer(frame_time)} & Thousand TL") +
+  theme_light() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.y =element_text(size=6,color="black"),
+    axis.title.y=element_blank(),
+    axis.text.x = element_text(size=6,color="black"),
+    axis.title.x=element_text(size=6, hjust = 1),
+    plot.title=element_text(color="black",size=6, face = "bold"),
+    plot.subtitle = element_text(color="black",size=6)) +
+  transition_time(year)
+  
+```
+
+In general, spending on all levels of education is increasing over the years, and accordingly, spending per student at each level of education is also increasing. In addition, it is observed that the higher the education level, the higher the expenditures. Tertiary education is the education level with the highest expenditure per student.
+
+
+
+### Introduction of Last Education Statistic
+The final aim of the project is to show what the educational status of individuals living in provinces in Turkey is and how it has changed over 4-year periods between 2008-2020.
+
+
+```{r, warning=FALSE, message=FALSE}
+data4 = read_excel("data/education_level_completed_by_province.xls", range = "A7:AW1072")
+
+
+data4 = data4 %>% select_if(~sum(!is.na(.)) > 0)
+
+data4 = drop_na(data4)
+
+data4 = data4[-c(4:6)]
+
+data4 = data4[-seq(5,32,by=3)]
+data4 = data4[-seq(5,23,by=2)]
+
+colnames(data4)[c(1,2,3,4,5,6)] = paste(c("Year",
+                                       "Province_code",
+                                       "Province_name",
+                                       "Illiterate",
+                                       "Literate_without_a_diploma",
+                                       "Primary_school"),
+                                     sep="")
+
+colnames(data4)[c(7,8,9,10,11,12,13)] = paste(c("Primary_education",
+                                             "Junior_and_vocational_high_school",
+                                             "High_and_vocational_high_school",
+                                             "Universities_and_other_higher_educational_institutions",
+                                             "Master",
+                                             "Doctorate",
+                                             "Unknown"),
+                                           sep="")
+
+i = 4
+for(i in 4:length(data4)){
+  data4[[i]] = as.numeric(data4[[i]])
+}
+
+
+province_names = data4 %>%
+                  filter(Year == 2008) %>%
+                   select(Province_name) %>%
+                    arrange(Province_name)
+                    
+```
+
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE, fig.align='center'}
+knitr::kable(head(data4))
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+url = "https://tr.wikipedia.org/wiki/T%C3%BCrkiye%27deki_illerin_geli%C5%9Fmi%C5%9Flik_d%C3%BCzeyleri#%C4%B0nsani_Geli%C5%9Fme_Endeksi'ne_g%C3%B6re"
+
+
+html = read_html(url)
+
+development_index_of_cities = html %>% 
+                                html_elements("table") %>%
+                                  .[[1]] %>%
+                                    html_table()
+
+development_index_of_cities = development_index_of_cities %>%
+                                select(-1)
+
+development_index_of_cities$Kademe = as.factor(development_index_of_cities$Kademe)
+
+colnames(development_index_of_cities)[c(1,2,3)] = paste(c("Province_name",
+                                                          "Score",
+                                                          "level"), sep = "")
+
+development_index_of_cities = development_index_of_cities %>%
+                                arrange(Province_name)
+
+
+development_index_of_cities[,"Province_name"] = province_names$Province_name
+```
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE, fig.align='center'}
+knitr::kable(head(development_index_of_cities))
+```
+
+
+
+```{r, warning=FALSE, message=FALSE}
+tur_polbnda_adm1_sf = st_read("./data/turkey_administrativelevels0_1_2/tur_polbnda_adm1.shp")
+
+tur_polbnda_adm1_sf = tur_polbnda_adm1_sf %>%
+                          select(adm1_tr) %>%
+                            rename("Province_name" = "adm1_tr")
+
+tur_polbnda_adm1_sf[c(68,69,70,71,72),] = tur_polbnda_adm1_sf[c(69,70,72,68,71),]
+
+tur_polbnda_adm1_sf[,"Province_name"] = province_names$Province_name 
+
+
+
+tur_pntcntr_adm1_sf = st_read("./data/turkey_centralpoints_1_2/tur_pntcntr_adm1.shp")
+```
+
+
+
+```{r, warning=FALSE,message=FALSE, fig.align='center', fig.width=3, fig.height=6}
+data4 %>%
+  pivot_longer("Illiterate":"Unknown", names_to = "edu_lev", values_to = "value") %>%
+  filter(edu_lev == "Illiterate") %>% 
+  ggplot(aes(x = value/1000 , y=Province_name)) +
+  geom_segment( aes(x=0, xend=value/1000, y=Province_name, yend=Province_name), color="#ab0505") +
+  geom_point( color="#ab0505", alpha=0.6) +
+  labs(x = "Number of Person", y = "",
+       title ="Number of Illiterate People in Turkey by Year",
+       subtitle = " Year: {as.integer(frame_time)} \nPopulation 15 years of age and over & Thousand Person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,500), n.breaks = 20 )  +
+  theme_light() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.y =element_text(size=4,color="black"),
+    axis.title.y=element_blank(),
+    axis.text.x = element_text(size=4,color="black"),
+    axis.title.x=element_text(size=6, hjust = 1),
+    plot.title=element_text(color="black",size=6, face = "bold"),
+    plot.subtitle = element_text(color="black",size=6))  +
+    transition_time(Year)
+```
+
+As it can be understood from the point graph above, there is a decrease in the number of illiterate people in almost all provinces in Turkey from 2008 to 2020. It is seen that Istanbul experienced the biggest decrease in the number of illiterate people depending on the population. Adana, İzmir and Şanlıurfa are also the provinces that experienced a great decrease in the number of illiterate people after İstanbul.
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center', fig.width=3, fig.height=6}
+data4 %>%
+  pivot_longer("Illiterate":"Unknown", names_to = "edu_lev") %>%
+  filter(edu_lev =="Literate_without_a_diploma") %>%
+  ggplot(aes(x = `value`/1000, y=Province_name)) +
+  geom_segment( aes(x=0, xend=`value`/1000, y=Province_name, yend=Province_name), color="#ab0505") +
+  geom_point( color="#ab0505", alpha=0.6) +
+   labs(x = "Number of Person", y = "",
+       title ="Number of Literate without A Diploma People in Turkey by Year ",
+       subtitle = "Year: {as.integer(frame_time)}\nPopulation 15 years of age and over & Thousand Person") +
+  scale_x_continuous(expand=c(0,0),limits = c(0,500), n.breaks = 20 )  +
+  theme_light() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.y =element_text(size=4,color="black"),
+    axis.title.y=element_blank(),
+    axis.text.x = element_text(size=4,color="black"),
+    axis.title.x=element_text(size=6, hjust = 1),
+    plot.title=element_text(color="black",size=6, face = "bold"),
+    plot.subtitle = element_text(color="black",size=6))  +
+    transition_time(Year)
+```
+
+
+
+
+```{r, message=FALSE, warning=FALSE}
+data4_2008 = data4 %>%
+  filter(Year == 2008) %>%
+  select(-c(2,4,5)) %>%
+  arrange(Province_name)
+
+turkey_2008 = data4_2008 %>%
+                full_join(development_index_of_cities) %>%
+                  full_join(tur_polbnda_adm1_sf)
+
+turkey_2008 <- st_as_sf(turkey_2008)
+
+```
+
+
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+pal_col8 = colorFactor(palette = get_brewer_pal("Blues", n=6, contrast = c(0.2,0.8)),
+                      domain = turkey_2008$level,
+                      reverse = TRUE)
+
+
+
+labels8 <-  sprintf("<strong>Year: </strong>%s</br>
+                   <strong>Province Name: </strong>%s</br>
+                   <strong>Primary School: </strong>%s<br/>
+                   <strong>Primary Education: </strong>%s<br/>
+                   <strong>Junior and Vocational High School: </strong>%s<br/>
+                   <strong>High and Vocational High School: </strong>%s<br/>
+                   <strong>Universities and Other Higher: </strong>%s<br/>
+                   <strong>Master: </strong>%s<br/>
+                   <strong>Doctorate: </strong>%s<br/>
+                   <strong>Unknown: </strong>%s<br/>",turkey_2008$"Year",
+                                                      turkey_2008$"Province_name",
+                                                      turkey_2008$"Primary_school", 
+                                                      turkey_2008$"Primary_education",
+                                                      turkey_2008$"Junior_and_vocational_high_school",
+                                                      turkey_2008$"High_and_vocational_high_school",
+                                                      turkey_2008$"Universities_and_other_higher_educational_institutions",
+                                                      turkey_2008$"Master",
+                                                      turkey_2008$"Doctorate",
+                                                      turkey_2008$"Unknown") %>%
+                    lapply(htmltools::HTML)
+```
+
+
+
+The development levels of the provinces in Turkey are reflected in the interactive maps below, thanks to the indexes determined according to the socio-economic development criteria of the [Devlet Planlama Teşkilatı](https://www.sbb.gov.tr/), and the educational status of the individuals living in that province is revealed above the provinces.  
+
+
+
+What is the educational status of the people in the provinces of Turkey in 2008?
+```{r, message=FALSE, warning=FALSE}
+turkey_2008 %>%
+  leaflet() %>%
+    addPolygons(fillColor = ~pal_col8(level),
+                fillOpacity = 1,
+                smoothFactor = 1,
+                color = "black",
+                weight = 1,
+                label = labels8,
+                labelOptions = labelOptions(style = list("color" = "white", #for popup label
+                                                         "background-color" = "#57A0CE",
+                                                         "border-color" = "#57A0CE",
+                                                         "padding" = "20px"),
+                                                  textsize = "15px",
+                                                  direction = "auto"),
+                highlight = highlightOptions(weight = 1,
+                                             fillColor = "white",
+                                             bringToFront = TRUE)) %>%
+                addLabelOnlyMarkers(lng = tur_pntcntr_adm1_sf$longitude,
+                                    lat = tur_pntcntr_adm1_sf$latitude,
+                                    label = ~Province_name,
+                                    labelOptions = labelOptions(noHide = T, 
+                                                                direction = "center",
+                                                                textsize = "9px",
+                                                                style = list("color" = "white",
+                                                                             "background-color" = "#1664AB",
+                                                                             "border-color" = "#1664AB",
+                                                                             "border-radius" = "35%",
+                                                                             "padding" = "0px"))) %>%
+  addLegend("bottomright", pal = pal_col8, values = ~level,
+    title = "Dev. İndex (2017)",
+    opacity = 1)
+
+```
+
+
+
+```{r, message=FALSE, warning=FALSE}
+data4_2012 = data4 %>%
+  filter(Year == 2012) %>%
+  select(-c(2,4,5))%>%
+  arrange(Province_name)
+
+
+turkey_2012 = data4_2012 %>%
+                full_join(development_index_of_cities) %>%
+                  full_join(tur_polbnda_adm1_sf)
+
+
+turkey_2012 <- st_as_sf(turkey_2012)
+```
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+pal_col12 = colorFactor(palette = get_brewer_pal("Greens", n=6, contrast = c(0.2,0.8)),
+                      domain = turkey_2012$level,
+                      reverse = TRUE)
+
+
+
+labels12 <-  sprintf("<strong>Year: </strong>%s</br>
+                    <strong>Province Name: </strong>%s</br>
+                   <strong>Primary School: </strong>%s<br/>
+                   <strong>Primary Education: </strong>%s<br/>
+                   <strong>Junior and Vocational High School: </strong>%s<br/>
+                   <strong>High and Vocational High School: </strong>%s<br/>
+                   <strong>Universities and Other Higher: </strong>%s<br/>
+                   <strong>Master: </strong>%s<br/>
+                   <strong>Doctorate: </strong>%s<br/>
+                   <strong>Unknown: </strong>%s<br/>",turkey_2012$"Year",
+                                                      turkey_2012$"Province_name",
+                                                      turkey_2012$"Primary_school", 
+                                                      turkey_2012$"Primary_education",
+                                                      turkey_2012$"Junior_and_vocational_high_school",
+                                                      turkey_2012$"High_and_vocational_high_school",
+                                                      turkey_2012$"Universities_and_other_higher_educational_institutions",
+                                                      turkey_2012$"Master",
+                                                      turkey_2012$"Doctorate",
+                                                      turkey_2012$"Unknown") %>%
+                    lapply(htmltools::HTML)
+
+```
+
+
+What is the educational status of the people in the provinces of Turkey in 2012?
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+turkey_2012 %>%
+  leaflet() %>%
+    addPolygons(fillColor = ~pal_col12(level),
+                fillOpacity = 1,
+                smoothFactor = 1,
+                color = "black",
+                weight = 1,
+                label = labels12,
+                labelOptions = labelOptions(style = list("color" = "white", #for popup label
+                                                         "background-color" = "#89CE87",
+                                                         "border-color" = "#89CE87",
+                                                         "padding" = "20px"),
+                                                  textsize = "15px",
+                                                  direction = "auto"),
+                highlight = highlightOptions(weight = 1,
+                                             fillColor = "white",
+                                             bringToFront = TRUE)) %>%
+                addLabelOnlyMarkers(lng = tur_pntcntr_adm1_sf$longitude,
+                                    lat = tur_pntcntr_adm1_sf$latitude,
+                                    label = ~Province_name,
+                                    labelOptions = labelOptions(noHide = T, 
+                                                                direction = "center",
+                                                                textsize = "9px",
+                                                                style = list("color" = "white",
+                                                                             "background-color" = "#147E3A",
+                                                                             "border-color" = "#147E3A",
+                                                                             "border-radius" = "35%",
+                                                                             "padding" = "0px"))) %>%
+  addLegend("bottomright", pal = pal_col12, values = ~level,
+    title = "Dev. İndex (2017)",
+    opacity = 1)
+```
+
+
+
+
+```{r, message=FALSE, warning=FALSE}
+data4_2016 = data4 %>%
+  filter(Year == 2016) %>%
+  select(-c(2,4,5))%>%
+  arrange(Province_name)
+
+
+turkey_2016 = data4_2016 %>%
+                full_join(development_index_of_cities) %>%
+                  full_join(tur_polbnda_adm1_sf)
+
+
+turkey_2016 <- st_as_sf(turkey_2016)
+```
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+pal_col16 = colorFactor(palette = get_brewer_pal("PuRd", n=6, contrast = c(0.2,0.8)),
+                      domain = turkey_2016$level,
+                      reverse = TRUE)
+
+
+
+labels16 <-  sprintf("<strong>Year: </strong>%s</br>
+                    <strong>Province Name: </strong>%s</br>
+                   <strong>Primary School: </strong>%s<br/>
+                   <strong>Primary Education: </strong>%s<br/>
+                   <strong>Junior and Vocational High School: </strong>%s<br/>
+                   <strong>High and Vocational High School: </strong>%s<br/>
+                   <strong>Universities and Other Higher: </strong>%s<br/>
+                   <strong>Master: </strong>%s<br/>
+                   <strong>Doctorate: </strong>%s<br/>
+                   <strong>Unknown: </strong>%s<br/>",turkey_2016$"Year",
+                                                      turkey_2016$"Province_name",
+                                                      turkey_2016$"Primary_school", 
+                                                      turkey_2016$"Primary_education",
+                                                      turkey_2016$"Junior_and_vocational_high_school",
+                                                      turkey_2016$"High_and_vocational_high_school",
+                                                      turkey_2016$"Universities_and_other_higher_educational_institutions",
+                                                      turkey_2016$"Master",
+                                                      turkey_2016$"Doctorate",
+                                                      turkey_2016$"Unknown") %>%
+                    lapply(htmltools::HTML)
+```
+
+
+
+What is the educational status of the people in the provinces of Turkey in 2016?
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+turkey_2016 %>%
+  leaflet() %>%
+    addPolygons(fillColor = ~pal_col16(level),
+                fillOpacity = 1,
+                smoothFactor = 1,
+                color = "black",
+                weight = 1,
+                label = labels16,
+                labelOptions = labelOptions(style = list("color" = "white", #for popup label
+                                                         "background-color" = "#D47BBB",
+                                                         "border-color" = "#D47BBB",
+                                                         "padding" = "20px"),
+                                                  textsize = "15px",
+                                                  direction = "auto"),
+                highlight = highlightOptions(weight = 1,
+                                             fillColor = "white",
+                                             bringToFront = TRUE)) %>%
+                addLabelOnlyMarkers(lng = tur_pntcntr_adm1_sf$longitude,
+                                    lat = tur_pntcntr_adm1_sf$latitude,
+                                    label = ~Province_name,
+                                    labelOptions = labelOptions(noHide = T, 
+                                                                direction = "center",
+                                                                textsize = "9px",
+                                                                style = list("color" = "white",
+                                                                             "background-color" = "#B80A4E",
+                                                                             "border-color" = "#B80A4E",
+                                                                             "border-radius" = "35%",
+                                                                             "padding" = "0px"))) %>%
+   addLegend("bottomright", pal = pal_col16, values = ~level,
+    title = "Dev. İndex (2017)",
+    opacity = 1)
+```
+
+
+
+
+
+
+```{r, message=FALSE, warning=FALSE}
+data4_2020 = data4 %>%
+  filter(Year == 2020) %>%
+  select(-c(2,4,5))%>%
+  arrange(Province_name)
+
+
+turkey_2020 = data4_2020 %>%
+                full_join(development_index_of_cities) %>%
+                  full_join(tur_polbnda_adm1_sf)
+
+
+turkey_2020 <- st_as_sf(turkey_2020)
+```
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE, include=FALSE}
+pal_col20 = colorFactor(palette = get_brewer_pal("YlOrRd", n=6, contrast = c(0.2,0.8)),
+                      domain = turkey_2020$level,
+                      reverse = TRUE)
+
+
+
+labels20 <-  sprintf("<strong>Year: </strong>%s</br>
+                    <strong>Province Name: </strong>%s</br>
+                   <strong>Primary School: </strong>%s<br/>
+                   <strong>Primary Education: </strong>%s<br/>
+                   <strong>Junior and Vocational High School: </strong>%s<br/>
+                   <strong>High and Vocational High School: </strong>%s<br/>
+                   <strong>Universities and Other Higher: </strong>%s<br/>
+                   <strong>Master: </strong>%s<br/>
+                   <strong>Doctorate: </strong>%s<br/>
+                   <strong>Unknown: </strong>%s<br/>",turkey_2020$"Year",
+                                                      turkey_2020$"Province_name",
+                                                      turkey_2020$"Primary_school", 
+                                                      turkey_2020$"Primary_education",
+                                                      turkey_2020$"Junior_and_vocational_high_school",
+                                                      turkey_2020$"High_and_vocational_high_school",
+                                                      turkey_2020$"Universities_and_other_higher_educational_institutions",
+                                                      turkey_2020$"Master",
+                                                      turkey_2020$"Doctorate",
+                                                      turkey_2020$"Unknown") %>%
+                    lapply(htmltools::HTML)
+```
+
+
+
+What is the educational status of the people in the provinces of Turkey in 2020?
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+turkey_2020 %>%
+  leaflet() %>%
+    addPolygons(fillColor = ~pal_col20(level),
+                fillOpacity = 1,
+                smoothFactor = 1,
+                color = "black",
+                weight = 1,
+                label = labels20,
+                labelOptions = labelOptions(style = list("color" = "white", #for popup label
+                                                         "background-color" = "#FD9E43",
+                                                         "border-color" = "#FD9E43",
+                                                         "padding" = "20px"),
+                                                  textsize = "15px",
+                                                  direction = "auto"),
+                highlight = highlightOptions(weight = 1,
+                                             fillColor = "white",
+                                             bringToFront = TRUE)) %>%
+                addLabelOnlyMarkers(lng = tur_pntcntr_adm1_sf$longitude,
+                                    lat = tur_pntcntr_adm1_sf$latitude,
+                                    label = ~Province_name,
+                                    labelOptions = labelOptions(noHide = T, 
+                                                                direction = "center",
+                                                                textsize = "9px",
+                                                                style = list("color" = "white",
+                                                                             "background-color" = "#D30F20",
+                                                                             "border-color" = "#D30F20",
+                                                                             "border-radius" = "35%",
+                                                                             "padding" = "0px"))) %>%
+   addLegend("bottomright", pal = pal_col20, values = ~level,
+    title = "Dev. İndex (2017)",
+    opacity = 1)
+```
+
+
+### Results and Discussion
+
+As a result of the researches and comparisons, firstly, it was seen that there is a strong relationship between education levels and income. It is clearly seen that as the level of education completed increases, the earnings of individuals also increase. Also, being a man provides a privilege to earn more income compared to women, even if they have completed the same education level. Secondly, there are 3 main reasons why people interrupt their education life without going to university, namely the economic inadequacy of their families, unsuccessful results in exams and family problems. Therefore, Turkey should do its best to enable individuals to continue their education life and benefit from the best opportunities, and bring the economic level of each family to the level where they can at least meet the educational needs of their children. Third, it is seen that the education level with the highest expenditure is higher education. On the other hand, it has been observed that as the development levels of the provinces increase, the number of people who complete that education level also increases, regardless of their education level. Of course, in this case, the number of people living in those provinces also has an effect. In addition, it is seen that the number of illiterate people in Turkey has decreased considerably from 2008 to 2020.
+
+
+
+### Conclusion 
+As a result, some remarkable education statistics of Turkey are shown in this project. When we evaluate all the statistics as a whole, it would not be wrong to say that Turkey has made progress in the field of education. In particular, there has been a significant increase in the number of educated people over the years. If Turkey continues to invest more in the field of education, it will be inevitable to develop together with the educated individuals it has trained.
+
+
+
+
+### References
+1. [Tüik](https://www.tuik.gov.tr/)
+
+2. https://www.displayr.com/how-to-make-a-pie-chart-in-
+
+3. https://tr.wikipedia.org/wiki/T%C3%BCrkiye%27deki_illerin_geli%C5%9Fmi%C5%9Flik_d%C3%BCzeyleri#%C4%B0nsani_Geli%C5%9Fme_Endeksi'ne_g%C3%B6re
+
+
